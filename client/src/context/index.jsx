@@ -1,5 +1,5 @@
 import { useAddress, useContract, useContractWrite, useMetamask } from '@thirdweb-dev/react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
 const StateContext = createContext();
 
@@ -26,12 +26,12 @@ export const StateContextProvider = ({ children }) => {
 			console.log(error);
 		}
 	};
-
-	return (
-		<StateContext.Provider value={{ address, contract, createCampaign: publishCampaign, connect }}>
-			{children}
-		</StateContext.Provider>
+	const providerValue = useMemo(
+		() => ({ address, contract, createCampaign: publishCampaign, connect }),
+		[address, contract, publishCampaign, connect],
 	);
+
+	return <StateContext.Provider value={providerValue}>{children}</StateContext.Provider>;
 };
 
 export const useStateContext = () => useContext(StateContext);
