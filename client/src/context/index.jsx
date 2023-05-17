@@ -1,5 +1,6 @@
 import { useAddress, useContract, useContractWrite, useMetamask } from '@thirdweb-dev/react';
 import { createContext, useContext, useMemo } from 'react';
+import { ethers } from 'ethers';
 
 const StateContext = createContext();
 
@@ -8,6 +9,7 @@ export const StateContextProvider = ({ children }) => {
 	const { mutateAsync: createCampaign } = useContractWrite(contract, 'createCampaign');
 	const address = useAddress();
 	const connect = useMetamask();
+
 	const publishCampaign = async form => {
 		try {
 			const data = await createCampaign({
@@ -26,9 +28,40 @@ export const StateContextProvider = ({ children }) => {
 			console.log(error);
 		}
 	};
+	const getCampaigns = async () => {
+		try {
+			const campaigns = await contract.call('getCampaigns');
+			const parsedCampaigns = campaigns.map(
+				({ owner, title, description, target, deadline, amountCollected, image }, i) => ({
+					owner: owner,
+					title: title,
+					description: description,
+					target: ethers.utils.formatEther(target.toString()),
+					deadline: deadline.toNumber(),
+					amountCollected: ethers.utils.formatEther(amountCollected.toString()),
+					image: image,
+					pId: i,
+				}),
+			);
+			return parsedCampaigns;
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const getUserCampaigns = async () => {
+		try {
+			const campaigns = await getCampaigns();
+			const filteredCampaigns = campaigns.filter(campaign => campaign.owner === address);
+			return filteredCampaigns;
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
 	const providerValue = useMemo(
-		() => ({ address, contract, createCampaign: publishCampaign, connect }),
-		[address, contract, publishCampaign, connect],
+		() => ({ address, contract, createCampaign: publishCampaign, connect, getCampaigns, getUserCampaigns }),
+		[address, contract, publishCampaign, connect, getCampaigns, getUserCampaigns],
 	);
 
 	return <StateContext.Provider value={providerValue}>{children}</StateContext.Provider>;
