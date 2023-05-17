@@ -59,9 +59,47 @@ export const StateContextProvider = ({ children }) => {
 		}
 	};
 
+	const donate = async (pId, amount) => {
+		try {
+			const data = await contract.call('donateToCampaign', [pId], { value: ethers.utils.parseEther(amount) });
+			return data;
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const getDonators = async pId => {
+		try {
+			const donations = await contract.call('getDonators', [pId]);
+			const numberOfDonations = donations[0].length;
+
+			const parsedDonations = [];
+
+			for (let i = 0; i < numberOfDonations; i++) {
+				parsedDonations.push({
+					donator: donations[0][i],
+					donationAmount: ethers.utils.formatEther(donations[1][i].toString()),
+				});
+			}
+
+			return parsedDonations;
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
 	const providerValue = useMemo(
-		() => ({ address, contract, createCampaign: publishCampaign, connect, getCampaigns, getUserCampaigns }),
-		[address, contract, publishCampaign, connect, getCampaigns, getUserCampaigns],
+		() => ({
+			address,
+			contract,
+			createCampaign: publishCampaign,
+			connect,
+			getCampaigns,
+			getUserCampaigns,
+			donate,
+			getDonators,
+		}),
+		[address, contract, publishCampaign, connect, getCampaigns, getUserCampaigns, donate, getDonators],
 	);
 
 	return <StateContext.Provider value={providerValue}>{children}</StateContext.Provider>;
